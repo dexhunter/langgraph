@@ -1,0 +1,50 @@
+[
+  {
+    "upstream_repo": "langchain-ai/langgraph",
+    "head_sha": "a054ed08dcee7ecc4105706d38c0b4aa0b3c3c32",
+    "file": "libs/langgraph/langgraph/_internal/_cache.py",
+    "function": "default_cache_key",
+    "native_test_cmd": "cd libs/langgraph && uv run pytest tests/test_delta_channel_node_cache.py -q --tb=short",
+    "bench_cmd": "cd libs/langgraph && uv run python ../../osspr-intake/harness/bench_cache_key.py",
+    "metric_kind": "output_bytes",
+    "baseline_value": 1120078.0,
+    "baseline_noise_pct": 0.0,
+    "metric_benchmark": "cd libs/langgraph && uv run python ../../osspr-intake/harness/bench_cache_key.py",
+    "labeled_data": null,
+    "tests_pass_on_baseline": true,
+    "workload": "Cache key for one node input: 800 chat messages with unique 1.2KB bodies, tool calls on odd turns, plus user and step.",
+    "notes": "default_cache_key pickle-protocol-5 dumps the entire node input (1,120,078 bytes here) even though Pregel immediately passes those bytes to xxh3_128_hexdigest in pregel/_algo.py. A fixed-size digest of the same canonical value keeps equal inputs together and unequal inputs apart, so node results stay the same, and replaces the returned blob. Traced peak while building the pickle is about 2.1MB. Overlap: gh search author:dexhunter repo:langchain-ai/langgraph returned no open or closed PRs. Open-PR files and PRs merged since 2026-10-13 do not include _internal/_cache.py. Issue 9581 is about duplicate Send tasks sharing one cached write in the loop, not this function. Skipped jsonplus dumps_typed/_msgpack_default (open PRs 7344, 6901, 6763, 6280, 8819) and add_messages (open PR 9631)."
+  },
+  {
+    "upstream_repo": "langchain-ai/langgraph",
+    "head_sha": "a054ed08dcee7ecc4105706d38c0b4aa0b3c3c32",
+    "file": "libs/langgraph/langgraph/channels/topic.py",
+    "function": "Topic.update",
+    "native_test_cmd": "cd libs/langgraph && uv run pytest tests/test_channels.py::test_topic tests/test_channels.py::test_topic_accumulate -q --tb=short",
+    "bench_cmd": "cd libs/langgraph && uv run python ../../osspr-intake/harness/bench_topic_update.py",
+    "metric_kind": "peak_memory_bytes",
+    "baseline_value": 12800096.0,
+    "baseline_noise_pct": 0.0,
+    "metric_benchmark": "cd libs/langgraph && uv run python ../../osspr-intake/harness/bench_topic_update.py",
+    "labeled_data": null,
+    "tests_pass_on_baseline": true,
+    "workload": "One Topic fan-in step: 400 batches of 2,000 integer ids (800,000 values) flattened into an empty non-accumulating topic.",
+    "notes": "Topic.update materializes tuple(_flatten(values)) and then extend()s that tuple into a new list, so both pointer arrays are live together. tracemalloc peak is exactly 12,800,096 bytes on this fan-in (two 800,000-pointer arrays) and did not move across 5 runs after a warmup. Extending from the iterator keeps the same values and the same bool. Overlap: channels/topic.py is absent from the open PR file set and from PRs merged since 2026-10-13. Skipped channels/binop.py (open PRs 6910, 6776, 6697, 6573) and channels/delta.py (merged PR 9420). Skipped sqlite delta walk helpers because open issue 9174 proposes changing the delta snapshot storage model. No dexhunter PRs on langchain-ai/langgraph."
+  },
+  {
+    "upstream_repo": "langchain-ai/langgraph",
+    "head_sha": "a054ed08dcee7ecc4105706d38c0b4aa0b3c3c32",
+    "file": "libs/checkpoint/langgraph/store/base/embed.py",
+    "function": "get_text_at_path",
+    "native_test_cmd": "cd libs/checkpoint && uv run pytest tests/test_store.py::test_get_text_at_path tests/test_store.py::test_get_text_at_path_with_non_dict_mapping -q --tb=short",
+    "bench_cmd": "cd libs/checkpoint && uv run --with memray==1.20.0 python ../../osspr-intake/harness/bench_get_text_alloc.py",
+    "metric_kind": "allocations",
+    "baseline_value": 1168476.0,
+    "baseline_noise_pct": 0.0,
+    "metric_benchmark": "cd libs/checkpoint && uv run --with memray==1.20.0 python ../../osspr-intake/harness/bench_get_text_alloc.py",
+    "labeled_data": null,
+    "tests_pass_on_baseline": true,
+    "workload": "Store index extraction of records[*].{title,body} over 4,000 documents (8,000 returned strings).",
+    "notes": "get_text_at_path is the text extractor InMemoryStore, SqliteStore, and PostgresStore call on put when an index path is set. For a wildcard multi-field path it re-tokenizes {title,body} on every record and returns a fresh one-element list per leaf. memray 1.20.0 with trace_python_allocators=True counts 1,168,476 allocations for 4,000 records, identical on 5 runs after a warmup, versus 8,000 result strings. One accumulator and a reused tokenization of the field list would return the same strings. Overlap: store/base/embed.py is not in open PRs or in PRs merged since 2026-10-13. Open issues 9255 and 9541 only flag deprecated asyncio.iscoroutinefunction inside _is_async_callable. Skipped store/memory/__init__.py because open PR 9633 touches it. No dexhunter PRs on langchain-ai/langgraph."
+  }
+]
