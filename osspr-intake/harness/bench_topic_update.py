@@ -8,9 +8,9 @@ import tracemalloc
 
 from langgraph.channels.topic import Topic
 
-# One superstep of fan-in: 400 batches of 2_000 ids. ``Topic.update`` flattens
-# them through ``tuple(_flatten(...))`` and then copies those pointers again
-# into `self.values`.
+# One superstep of fan-in: 400 batches of 2_000 ids. Topic.update flattens
+# them through tuple(_flatten(...)) and then copies those pointers again
+# into self.values.
 N_BATCHES = 400
 BATCH = 2000
 
